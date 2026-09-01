@@ -380,7 +380,17 @@ lookupOne("#player-select").addEventListener("submit", (e) => {
 
             validationInput.setCustomValidity("");
 
+            const isPlayerDraw = Boolean(e.submitter?.id === "player-select-qr");
             const isShowAll = Boolean(e.submitter?.id === "player-select-all");
+
+            if (isPlayerDraw) {
+
+                gameObserver.trigger("player-draw-start", {
+                    characters: filtered
+                });
+                return;
+
+            }
 
             gameObserver.trigger("character-draw", {
                 isShowAll,

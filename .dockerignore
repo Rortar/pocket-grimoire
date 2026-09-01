@@ -1,0 +1,15 @@
+.git
+.idea
+node_modules
+vendor
+var
+public/build
+public/bundles
+package-lock.json
+npm-debug.log
+yarn-error.log
+.env.local
+.env.local.php
+.env.*.local
+config/secrets/prod/prod.decrypt.private.php
+docker/db/data
