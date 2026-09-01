@@ -414,6 +414,17 @@ class Role
      */
     public function getImage(): string
     {
+        if (
+            strpos($this->image, '/build/img/roles/') === 0
+            && $this->team
+        ) {
+            return sprintf(
+                '/build/img/icons/%s/%s.webp',
+                $this->team->getIdentifier(),
+                $this->identifier
+            );
+        }
+
         return $this->image;
     }
 

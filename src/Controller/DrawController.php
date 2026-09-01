@@ -433,8 +433,21 @@ class DrawController extends AbstractController
         ];
 
         if ($includeCharacter) {
+            $character = $slot['character'];
+
+            if (
+                strpos((string) ($character['image'] ?? ''), '/build/img/roles/') === 0
+                && !empty($character['team'])
+            ) {
+                $character['image'] = sprintf(
+                    '/build/img/icons/%s/%s.webp',
+                    $character['team'],
+                    $slot['characterId']
+                );
+            }
+
             $data['characterId'] = $slot['characterId'];
-            $data['character'] = $slot['character'];
+            $data['character'] = $character;
         }
 
         return $data;

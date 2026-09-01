@@ -20,7 +20,7 @@ draw:
     player_number: "You are player #%number%"
     name: Your name
     submit: Save name
-    registered: Registered — View script
+    registered: Registered - once you've remembered your character, press here to see the script
     saving: Saving...
     saved: Name saved
     draft_saved: Name shared with the Storyteller
