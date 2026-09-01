@@ -18,6 +18,7 @@ const characterSelectDialog = Dialog.create(lookupOneCached("#character-select")
 const slotTemplate = Template.create(lookupOneCached("#player-draw-slot-template"));
 const qrButton = lookupOneCached("#player-select-qr");
 const validationInput = lookupOneCached("#player-select-validation");
+const copyButton = lookupOneCached("#player-draw-copy-link");
 
 let activeSession = null;
 let pollTimer = null;
@@ -60,9 +61,61 @@ function drawQRCode(url) {
     }));
 
     lookupOneCached("#player-draw-qr-link").href = url;
-    lookupOneCached("#player-draw-open-link").href = url;
+    copyButton.dataset.url = url;
 
 }
+
+function copyUsingSelection(value) {
+
+    const input = document.createElement("textarea");
+    input.value = value;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.append(input);
+    input.select();
+
+    const copied = document.execCommand("copy");
+    input.remove();
+    return copied;
+
+}
+
+function copyDrawUrl() {
+
+    const url = copyButton.dataset.url;
+
+    if (!url) {
+        return Promise.resolve(false);
+    }
+
+    if (navigator.clipboard?.writeText) {
+        return navigator.clipboard.writeText(url)
+            .then(() => true)
+            .catch(() => copyUsingSelection(url));
+    }
+
+    return Promise.resolve(copyUsingSelection(url));
+
+}
+
+copyButton.addEventListener("click", () => {
+
+    copyDrawUrl().then((copied) => {
+
+        copyButton.textContent = (
+            copied
+            ? I18N.playerDrawLinkCopied
+            : I18N.playerDrawCopyError
+        );
+
+        window.setTimeout(() => {
+            copyButton.textContent = I18N.playerDrawCopyLink;
+        }, 2500);
+
+    });
+
+});
 
 function getSlotName(slot) {
 

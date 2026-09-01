@@ -120,7 +120,9 @@ setup:
         title: Player draw QR
         intro: Scan this QR code to draw characters on players' own devices.
         submitted: names submitted
-        open_link: Open draw page
+        copy_link: Copy draw link
+        link_copied: Link copied
+        copy_error: Could not copy link
         waiting: Waiting
         claimed: Choosing name
         typing: Typing
