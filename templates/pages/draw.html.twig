@@ -14,7 +14,10 @@
 <section class="player-draw-page">
     <p id="draw-status" class="player-draw-page__status">{{ 'draw.claiming'|trans }}</p>
     <p id="draw-number" class="player-draw-page__number" hidden></p>
-    <div id="draw-token" class="player-draw-page__token"></div>
+    <p id="draw-reveal-wrapper" hidden>
+        <button type="button" class="button" id="draw-reveal">{{ 'draw.reveal'|trans }}</button>
+    </p>
+    <div id="draw-token" class="player-draw-page__token" hidden></div>
     <p id="draw-ability" class="player-draw-page__ability" hidden></p>
 
     <form id="draw-name-form" class="player-draw-page__form" hidden>
@@ -61,6 +64,7 @@ var URLS = {
 var I18N = {
     drawClaiming: "{{ 'draw.claiming'|trans|e('js') }}",
     drawClaimed: "{{ 'draw.claimed'|trans|e('js') }}",
+    drawReadyToReveal: "{{ 'draw.ready_to_reveal'|trans|e('js') }}",
     drawPlayerNumber: "{{ 'draw.player_number'|trans|e('js') }}",
     drawSubmit: "{{ 'draw.submit'|trans|e('js') }}",
     drawSaving: "{{ 'draw.saving'|trans|e('js') }}",

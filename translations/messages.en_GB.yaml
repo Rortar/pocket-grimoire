@@ -17,6 +17,8 @@ draw:
     description: Draw a Blood on the Clocktower character
     claiming: Claiming your character...
     claimed: Character claimed
+    ready_to_reveal: Your character is ready. Make sure nobody else can see your screen before revealing it.
+    reveal: Reveal my character
     player_number: "You are player #%number%"
     name: Your name
     submit: Save name

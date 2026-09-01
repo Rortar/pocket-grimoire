@@ -16,6 +16,8 @@ CharacterToken.setTemplates({
 const storageKey = `pocket-grimoire-draw-${DRAW_SESSION.id}`;
 const status = lookupOneCached("#draw-status");
 const number = lookupOneCached("#draw-number");
+const revealWrapper = lookupOneCached("#draw-reveal-wrapper");
+const revealButton = lookupOneCached("#draw-reveal");
 const token = lookupOneCached("#draw-token");
 const ability = lookupOneCached("#draw-ability");
 const form = lookupOneCached("#draw-name-form");
@@ -65,23 +67,33 @@ function renderSlot(slot) {
     empty(token).append(character.drawToken());
 
     ability.textContent = character.getAbility();
-    ability.hidden = false;
 
     nameInput.value = slot.name || "";
-    form.hidden = false;
     setRegistered(slot.submitted);
+    revealWrapper.hidden = false;
+
+    setStatus(I18N.drawReadyToReveal);
+
+}
+
+function revealCharacter() {
+
+    revealWrapper.hidden = true;
+    token.hidden = false;
+    ability.hidden = false;
+    form.hidden = false;
 
     setStatus(
-        slot.submitted
+        registered
         ? I18N.drawSaved
         : (
-            slot.name
+            nameInput.value
             ? I18N.drawDraftSaved
             : I18N.drawClaimed
         )
     );
 
-    if (!slot.submitted) {
+    if (!registered) {
         nameInput.focus();
     }
 
@@ -155,6 +167,8 @@ form.addEventListener("submit", (event) => {
     saveName(true);
 
 });
+
+revealButton.addEventListener("click", revealCharacter);
 
 nameInput.addEventListener("input", scheduleDraftSave);
 
