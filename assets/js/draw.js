@@ -20,12 +20,21 @@ const token = lookupOneCached("#draw-token");
 const ability = lookupOneCached("#draw-ability");
 const form = lookupOneCached("#draw-name-form");
 const nameInput = lookupOneCached("#draw-name");
+const submitButton = lookupOneCached("#draw-submit");
 
 let claimToken = "";
 let draftTimer = null;
+let registered = false;
 
 function setStatus(message) {
     status.textContent = message;
+}
+
+function setRegistered(state) {
+
+    registered = state;
+    submitButton.textContent = state ? I18N.drawRegistered : I18N.drawSubmit;
+
 }
 
 function getStoredClaimToken() {
@@ -60,6 +69,7 @@ function renderSlot(slot) {
 
     nameInput.value = slot.name || "";
     form.hidden = false;
+    setRegistered(slot.submitted);
 
     setStatus(
         slot.submitted
@@ -87,6 +97,7 @@ function saveName(submitted) {
 
     if (submitted) {
         setStatus(I18N.drawSaving);
+        submitButton.disabled = true;
     }
 
     return post(URLS.name, {
@@ -98,14 +109,21 @@ function saveName(submitted) {
 
             if (!json.success) {
                 setStatus(json.message || I18N.drawClaimError);
+                submitButton.disabled = false;
                 return;
             }
 
             setStatus(submitted ? I18N.drawSaved : I18N.drawDraftSaved);
 
+            if (submitted) {
+                setRegistered(true);
+                submitButton.disabled = false;
+            }
+
         })
         .catch(() => {
             setStatus(I18N.drawClaimError);
+            submitButton.disabled = false;
         });
 
 }
@@ -122,6 +140,11 @@ function scheduleDraftSave() {
 form.addEventListener("submit", (event) => {
 
     event.preventDefault();
+
+    if (registered) {
+        window.location.assign(URLS.sheet);
+        return;
+    }
 
     if (!nameInput.value.trim()) {
         form.reportValidity();

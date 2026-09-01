@@ -126,8 +126,15 @@ class DrawController extends AbstractController
             throw $this->createNotFoundException('Draw session not found.');
         }
 
+        $characterIds = array_map(function (array $slot): string {
+            return $slot['characterId'];
+        }, $session->getSlots());
+
         return $this->render('pages/draw.html.twig', [
             'session' => $session,
+            'sheetUrl' => $this->generateUrl('sheet', [
+                'characters' => implode(',', $characterIds),
+            ]),
         ]);
     }
 

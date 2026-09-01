@@ -22,7 +22,7 @@
             <label for="draw-name" class="d-block text-small">{{ 'draw.name'|trans }}</label>
             <input type="text" class="input" name="draw-name" id="draw-name" autocomplete="name" required>
         </p>
-        <p><button type="submit" class="button">{{ 'draw.submit'|trans }}</button></p>
+        <p><button type="submit" class="button" id="draw-submit">{{ 'draw.submit'|trans }}</button></p>
     </form>
 </section>
 
@@ -54,15 +54,18 @@ var DRAW_SESSION = {
 
 var URLS = {
     claim: "{{ path('draw_claim', { uuid: session.uuid })|e('js') }}",
-    name: "{{ path('draw_name', { uuid: session.uuid })|e('js') }}"
+    name: "{{ path('draw_name', { uuid: session.uuid })|e('js') }}",
+    sheet: "{{ sheetUrl|e('js') }}"
 };
 
 var I18N = {
     drawClaiming: "{{ 'draw.claiming'|trans|e('js') }}",
     drawClaimed: "{{ 'draw.claimed'|trans|e('js') }}",
     drawPlayerNumber: "{{ 'draw.player_number'|trans|e('js') }}",
+    drawSubmit: "{{ 'draw.submit'|trans|e('js') }}",
     drawSaving: "{{ 'draw.saving'|trans|e('js') }}",
     drawSaved: "{{ 'draw.saved'|trans|e('js') }}",
+    drawRegistered: "{{ 'draw.registered'|trans|e('js') }}",
     drawDraftSaved: "{{ 'draw.draft_saved'|trans|e('js') }}",
     drawClaimError: "{{ 'draw.claim_error'|trans|e('js') }}"
 };
