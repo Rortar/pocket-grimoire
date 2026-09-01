@@ -205,7 +205,7 @@ function startPolling() {
 
 }
 
-function createSession(characters) {
+function createSession(characters, script) {
 
     const payload = characters.map((character, index) => ({
         drawKey: createDrawKey(index),
@@ -222,7 +222,19 @@ function createSession(characters) {
     validationInput.setCustomValidity("");
 
     return post(URLS.drawCreate, {
-        characters: payload
+        characters: payload,
+        sheet: {
+            name: script?.name || "",
+            game: script?.game || "",
+            characters: (script?.characters || [])
+                .filter((character) => [
+                    "townsfolk",
+                    "outsider",
+                    "minion",
+                    "demon"
+                ].includes(character.getTeam()))
+                .map((character) => character.getId())
+        }
     })
         .then((state) => {
 
@@ -260,6 +272,6 @@ gameObserver.on("player-draw-start", ({ detail }) => {
         return;
     }
 
-    createSession(detail.characters);
+    createSession(detail.characters, detail.script);
 
 });

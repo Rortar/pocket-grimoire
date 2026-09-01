@@ -47,6 +47,7 @@ class DrawController extends AbstractController
 
         $data = $this->decodeRequestJson($request);
         $rawCharacters = $data['characters'] ?? [];
+        $sheet = $this->normaliseSheet($data['sheet'] ?? []);
 
         if (!is_array($rawCharacters)) {
             return $this->jsonError('No characters were sent.', Response::HTTP_BAD_REQUEST);
@@ -84,6 +85,8 @@ class DrawController extends AbstractController
             ];
 
         }, $characters, array_keys($characters));
+
+        $slots[0]['sheet'] = $sheet;
 
         $created = new \DateTime();
         $expiresAt = (clone $created)->modify('+12 hours');
@@ -126,15 +129,35 @@ class DrawController extends AbstractController
             throw $this->createNotFoundException('Draw session not found.');
         }
 
-        $characterIds = array_map(function (array $slot): string {
-            return $slot['characterId'];
-        }, $session->getSlots());
+        $slots = $session->getSlots();
+        $sheet = $slots[0]['sheet'] ?? [];
+        $sheetParameters = [];
+
+        if (!empty($sheet['game'])) {
+            $sheetParameters = [
+                'game' => $sheet['game'],
+                'traveller' => 0,
+                'fabled' => 0,
+            ];
+        } else {
+            $characterIds = $sheet['characters'] ?? [];
+
+            if (!$characterIds) {
+                $characterIds = array_map(function (array $slot): string {
+                    return $slot['characterId'];
+                }, $slots);
+            }
+
+            $sheetParameters['characters'] = implode(',', $characterIds);
+        }
+
+        if (!empty($sheet['name'])) {
+            $sheetParameters['name'] = $sheet['name'];
+        }
 
         return $this->render('pages/draw.html.twig', [
             'session' => $session,
-            'sheetUrl' => $this->generateUrl('sheet', [
-                'characters' => implode(',', $characterIds),
-            ]),
+            'sheetUrl' => $this->generateUrl('sheet', $sheetParameters),
         ]);
     }
 
@@ -299,6 +322,23 @@ class DrawController extends AbstractController
             'drawKey' => $drawKey,
             'characterId' => $character['id'],
             'character' => $character,
+        ];
+    }
+
+    private function normaliseSheet($sheet): array
+    {
+        if (!is_array($sheet)) {
+            return [];
+        }
+
+        $characters = array_values(array_unique(array_filter(array_map(function ($id): string {
+            return $this->normaliseId((string) $id);
+        }, array_slice(is_array($sheet['characters'] ?? null) ? $sheet['characters'] : [], 0, 100)))));
+
+        return [
+            'name' => trim(substr((string) ($sheet['name'] ?? ''), 0, 255)),
+            'game' => trim(substr((string) ($sheet['game'] ?? ''), 0, 255)),
+            'characters' => $characters,
         ];
     }
 
