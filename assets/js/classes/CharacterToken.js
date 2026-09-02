@@ -86,6 +86,21 @@ export default class CharacterToken extends Token {
 
         }
 
+        if (
+            processed.image.startsWith("/build/img/roles/")
+            && processed.id
+            && processed.team
+        ) {
+
+            const imageTeam = (
+                processed.id === "wraith" && processed.team === "minion"
+                ? "demon"
+                : processed.team
+            );
+
+            processed.image = `/build/img/icons/${imageTeam}/${processed.id}.webp`;
+        }
+
         return processed;
 
     }

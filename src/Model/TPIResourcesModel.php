@@ -366,6 +366,10 @@ class TPIResourcesModel
      */
     protected function generateImages(string $id, string $team): array
     {
+        if ($id === 'wraith' && $team === 'minion') {
+            $team = 'demon';
+        }
+
         return [sprintf(static::LOCATION_IMAGES, $team, $id)];
     }
 }
