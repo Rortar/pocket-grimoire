@@ -10,316 +10,56 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
-use App\Repository\RoleRepository;
-use App\Repository\JinxRepository;
-use App\Repository\TeamRepository;
-use App\Repository\HomebrewRepository;
 use App\Entity\Homebrew;
-use App\Entity\Jinx;
 use App\Model\HomebrewModel;
 use App\Model\GameModel;
 
 class MainController extends AbstractController
 {
 
-    private $roleRepo;
-    private $jinxRepo;
-    private $teamRepo;
-    private $homebrewRepo;
     private $homebrewModel;
 
     public function __construct(
-        RoleRepository $roleRepo,
-        JinxRepository $jinxRepo,
-        TeamRepository $teamRepo,
-        HomebrewRepository $homebrewRepo,
         HomebrewModel $homebrewModel
     ) {
-        $this->roleRepo = $roleRepo;
-        $this->jinxRepo = $jinxRepo;
-        $this->teamRepo = $teamRepo;
-        $this->homebrewRepo = $homebrewRepo;
         $this->homebrewModel = $homebrewModel;
     }
 
-    /**
-     * @Route("/", name="index_stub")
-     */
+    #[Route("/", name: "index_stub")]
     public function indexStubAction(Request $request): Response
     {
         return $this->redirectToRoute('index', $request->query->all(), 301);
     }
 
-    /**
-     * @Route("/sheet", name="sheet_stub")
-     */
+    #[Route("/sheet", name: "sheet_stub")]
     public function sheetStubAction(Request $request): Response
     {
         return $this->redirectToRoute('sheet', $request->query->all(), 301);
     }
 
-    /**
-     * @Route("/{_locale}/", name="index")
-     */
+    #[Route("/{_locale}/", name: "index")]
     public function indexAction(
         GameModel $gameModel
     ): Response {
-
-        return $this->render('pages/index.html.twig', [
-            'breakdown' => $gameModel->getTransposedFeed(),
-        ]);
-
+        return $this->render('pages/index.html.twig');
     }
 
-    /**
-     * @Route("/{_locale}/sheet", name="sheet")
-     */
+    #[Route("/{_locale}/sheet", name: "sheet")]
     public function sheetAction(
         Request $request,
         GameModel $gameModel,
         EntityManagerInterface $em
     ): Response {
 
-
-        $groups = [];
-        $jinxes = [];
-        $name = '';
-
-        if ($characters = $request->query->get('characters')) {
-
-            $ids = array_map(function (string $id) {
-                return $this->homebrewModel->normaliseId($id);
-            }, explode(',', $characters));
-
-            foreach ($ids as $id) {
-
-                $character = $this->roleRepo->findOneBy(['identifier' => $id]);
-                $team = $character->getTeam();
-                $teamId = $team->getIdentifier();
-
-                if (!array_key_exists($teamId, $groups)) {
-
-                    $groups[$teamId] = [
-                        'team' => $team,
-                        'characters' => []
-                    ];
-
-                }
-
-                $groups[$teamId]['characters'][] = $character;
-
-                foreach ($character->getJinxes() as $jinx) {
-
-                    $targetId = $this->homebrewModel->normaliseId(
-                        $jinx->getTarget()->getIdentifier()
-                    );
-                    $trickId = $this->homebrewModel->normaliseId(
-                        $jinx->getTrick()->getIdentifier()
-                    );
-
-                    if (in_array($targetId, $ids) && in_array($trickId, $ids)) {
-
-                        $jinx->setActive(true);
-                        $jinxes[] = $jinx;
-
-                    }
-
-                }
-
-            }
-
-            $name = $request->query->get('name');
-
-        } else if (
-            ($game = $request->query->get('game'))
-            && ($homebrew = $this->homebrewRepo->findOneBy(['uuid' => $game]))
-        ) {
-
-            // Cache the teams so that we're not constantly looking them up.
-            // Might save a little processing power.
-            $teamMap = [];
-
-            // Work out the IDs that we're using.
-            $ids = array_reduce($homebrew->getJson(), function (array $carry, array $character): array {
-
-                if (!array_key_exists('id', $character)) {
-                    return $carry;
-                }
-
-                $id = $this->homebrewModel->normaliseId($character['id']);
-
-                if (
-                    !in_array($id, $carry)
-                    && !$this->homebrewModel->isMetaEntry($character)
-                ) {
-                    $carry[] = $id;
-                }
-
-                return $carry;
-
-            }, []);
-
-            // Generate any homebrew characters and store them in a map. This
-            // allows us to reference them in the next loop, preventing an issue
-            // where a jinx references a character that's defined lated and
-            // creating a rendering issue on the character sheet.
-            $characterMap = [];
-            foreach ($homebrew->getJson() as $character) {
-
-                if (!array_key_exists('id', $character)) {
-                    continue;
-                }
-
-                $characterId = $this->homebrewModel->normaliseId($character['id']);
-                $target = (
-                    $this->roleRepo->findOneBy([ 'identifier' => $characterId ])
-                    ?? $this->roleRepo->createTemp($character)
-                );
-                $characterMap[$characterId] = $target;
-
-            }
-
-            $tempJinxes = [];
-
-            foreach ($homebrew->getJson() as $character) {
-
-                if ($this->homebrewModel->isMetaEntry($character)) {
-
-                    $name = $character['name'];
-                    continue;
-
-                }
-
-                if (array_key_exists('team', $character)) {
-
-                    $teamId = $character['team'];
-
-                    if (!array_key_exists($teamId, $teamMap)) {
-                        $teamMap[$teamId] = $this->teamRepo->findOneBy(['identifier' => $teamId]);
-                    }
-
-                    $team = $teamMap[$teamId];
-
-                } else {
-
-                    $characterId = $this->homebrewModel->normaliseId($character['id']);
-                    $character = $this->roleRepo->findOneBy(['identifier' => $characterId]);
-                    $team = $character->getTeam();
-                    $teamId = $team->getIdentifier();
-
-                    if (!in_array($characterId, $ids)) {
-                        $ids[] = $characterId;
-                    }
-
-                    foreach ($character->getJinxes() as $jinx) {
-                        $tempJinxes[] = $jinx;
-                    }
-
-                }
-
-                // Convert any homebrew jinxes into Jinx entities. We need to
-                // ensure that the character data has an ID to prevent an error
-                // appearing if an older upload URL is checked.
-                if (
-                    array_key_exists('jinxes', $character)
-                    && array_key_exists('id', $character)
-                ) {
-
-                    $characterJinxes = [];
-
-                    foreach ($character['jinxes'] as $maybeJinx) {
-
-                        if (is_array($maybeJinx)) {
-
-                            $targetId = $this->homebrewModel->normaliseId($character['id']);
-                            $target = $characterMap[$targetId];
-
-                            $jinxId = $this->homebrewModel->normaliseId($maybeJinx['id']);
-                            $trick = (
-                                $characterMap[$jinxId]
-                                ?? $this->roleRepo->findOneBy([
-                                    'identifier' => $jinxId
-                                ])
-                                ?? $this->roleRepo->createTemp($maybeJinx)
-                            );
-                            // $characterMap[$jinxId] = $trick;
-
-                            $jinx = (new Jinx())
-                                ->setTarget($target)
-                                ->setTrick($trick)
-                                ->setReason($maybeJinx['reason']);
-                            $tempJinxes[] = $jinx;
-                            $characterJinxes[] = $jinx;
-
-                        } else {
-                            $characterJinxes[] = $maybeJinx;
-                        }
-
-                    }
-
-                    $character['jinxes'] = $characterJinxes;
-
-                }
-
-                if (!array_key_exists($teamId, $groups)) {
-
-                    $groups[$teamId] = [
-                        'team' => $team,
-                        'characters' => []
-                    ];
-
-                }
-
-                $groups[$teamId]['characters'][] = $character;
-
-            }
-
-            foreach ($tempJinxes as $jinx) {
-
-                $targetId = $this->homebrewModel->normaliseId(
-                    $jinx->getTarget()->getIdentifier()
-                );
-                $trickId = $this->homebrewModel->normaliseId(
-                    $jinx->getTrick()->getIdentifier()
-                );
-
-                if (in_array($targetId, $ids) && in_array($trickId, $ids)) {
-
-                    $jinx->setActive(true);
-                    $jinxes[] = $jinx;
-
-                }
-
-            }
-
-            if ((int) $request->query->get('traveller', 0) !== 1) {
-                unset($groups['traveller']);
-            }
-
-            if ((int) $request->query->get('fabled', 0) !== 1) {
-                unset($groups['fabled'], $groups['loric']);
-            }
-
-            $homebrew->setAccessed(new \DateTime());
-            $em->persist($homebrew);
-            $em->flush();
-
-        }
-
-        $gameModel->sortGroups($groups);
+        $name = $request->query->get('name') ?? '';
 
         return $this->render('pages/sheet.html.twig', [
             'name' => $name,
-            'groups' => $groups,
-            'jinxes' => $jinxes,
-            'breakdown' => $gameModel->getTransposedFeed(),
         ]);
 
     }
 
-    /**
-     * @Route("/{_locale}/homebrew", name="homebrew")
-     */
+    #[Route("/{_locale}/homebrew", name: "homebrew")]
     public function homebrewAction(
         Request $request,
         EntityManagerInterface $em,
@@ -367,23 +107,19 @@ class MainController extends AbstractController
 
     }
 
-    /**
-     * @Route("/tokens", name="tokens_stub")
-     */
+    #[Route("/tokens", name: "tokens_stub")]
     public function tokensStubAction(Request $request): Response
     {
         return $this->redirectToRoute('tokens', $request->query->all(), 301);
     }
 
-    /**
-     * @Route("/{_locale}/tokens", name="tokens")
-     */
-    public function tokensAction(
+    # [Route("/{_locale}/tokens", name: "tokens")]
+    /*public function tokensAction(
         Request $request,
         RoleRepository $roleRepo,
         TeamRepository $teamRepo,
         TranslatorInterface $translator
-    ) {
+    ): Response {
 
         $feed = $roleRepo->getFeed();
         $roles = [];
@@ -419,6 +155,6 @@ class MainController extends AbstractController
             'roles' => $roles
         ]);
 
-    }
+    }*/
 
 }

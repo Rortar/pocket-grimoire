@@ -58,6 +58,7 @@ setup:
 
     editions:
         title: Выбрать сценарий
+        official: Official scripts
         trouble_brewing: Тьма Сгущается
         bad_moon_rising: Восход кровавой луны
         sects_and_violets: Цветы и слёзы
@@ -69,6 +70,9 @@ setup:
         paste: Добавить из буфера
         unsupported: Просим учитывать, что Карманный Гримуар на данный момент не поддерживает нестандартные и локализованные роли.
         select: Выбрать
+        botc: BotC Scripts
+        lookup: Look up script
+        no_results: No results could be found
 
     character_select:
         title: Выбрать роли
@@ -267,7 +271,19 @@ errors:
         invalid_entry: 'Не верный ввод для "%id%": %reasons%'
         empty_teams: 'Пустые команды: %teams%'
         invalid_property: Свойство "%property%" должен лоны тип %expected% но вöлi тип %given% пыдди
+        invalid_uuid: Invalid game UUID
+        unrecognised_uuid: Unrecognised UUID
     url:
         no_url: Ссылка не корректна или отсутствует
         cannot_access: Нет доступа по ссылке
         not_json: JSON по ссылке не может быть обработан
+        https_only: URL not https
+        no_hostname: No hostname
+        has_credentials: URL has credentials
+        port_not_443: Port not 443
+        redirect_no_location: No redirect location
+        http_status: HTTP status %code%
+        too_many_redirects: Too many redirects
+    botc_scripts:
+        invalid_search: Invalid or empty search term
+

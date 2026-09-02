@@ -120,11 +120,11 @@ The JSON feed has loaded and the game knows about all the possible characters.
 
 #### `characters-selected`
 
-- `detail.name` -> `String`
+- `detail.meta` -> `Object`
 - `detail.characters` -> `Array.<CharacterToken>`
 - `detail.game` -> `String|undefined`
 
-The edition has been loaded or the custom script has been parsed. The edition name and the characters are passed to the event. Optionally the ID of the stored game may be passed - this only happens for homebrew scripts.
+The edition has been loaded or the custom script has been parsed. The script meta entry and the characters are passed to the event. Optionally the ID of the stored game may be passed - this only happens for homebrew scripts.
 
 #### `character-toggle`
 
@@ -171,6 +171,12 @@ Fires whenever the height of the pad is changed by the user. The height is passe
 - `detail.count` -> `Number`
 
 The number of players that have been selected.
+
+#### `scripts-loaded'
+
+- `detail.scripts` -> `Object`
+
+The IDs of the characters in the official scripts, set in the order in which they should appear.
 
 #### `team-breakdown-loaded`
 

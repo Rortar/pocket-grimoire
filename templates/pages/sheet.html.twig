@@ -15,91 +15,69 @@
 </header>
 {% endif %}
 
-{% for data in groups %}
-    {% set team = data.team %}
-    {% set teamId = team.identifier %}
-    {% embed 'includes/details.html.twig' with {
-        open: teamId not in ['traveller', 'fabled'],
-        id: 'wrapper-' ~ teamId,
-        class: 'edition' ~ (data.characters|length ? '' : ' is-empty')
-    } %}
-        {% block summary %}
-        <span class="edition__heading-text">{{ team.name }}</span>
-        {% endblock %}
-        {% block body %}
-        <div id="team-{{ teamId }}" class="edition__team">
-            {% for character in data.characters %}
-                <div class="edition__role">
-                    <p class="edition__name">{{ character.name }}</p>
-                    <div class="edition__icon">
-                        <img src="{{ character.image }}" alt="" class="edition__image" width="177" height="124" aria-hidden="true" loading="lazy">
-                    </div>
-                    <div class="edition__ability">{{ character.ability }}</div>
-                    {% if character.jinxes|default([])|length %}
-                        <div class="edition__jinxes">
-                            {% for jinx in character.jinxes|default([]) %}
-                                {% if jinx.active|default(false) %}
-                                    <div class="edition__jinx">
-                                        <img src="{{ jinx.trick.image }}" alt="{{ 'sheet.jinx'|trans }}: {{ jinx.trick.name }}" title="{{ jinx.reason }}" width="177" height="124" loading="lazy">
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
+<template id="sheet-group">
+    <details class="details edition js--sheet-group--wrapper">
+        <summary class="details__summary">
+            <h2 class="details__heading">
+                <span class="edition__heading-text js--sheet-group--name"></span>
+            </h2>
+        </summary>
+        <div class="details__body">
+            <div class="edition__team js--sheet-group--contents"></div>
         </div>
-        {% endblock %}
-    {% endembed %}
-{% endfor %}
+    </details>
+</template>
 
-{% if jinxes|length %}
-    {% embed 'includes/details.html.twig' with {
-        open: true,
-        id: 'wrapper-jinx',
-        class: 'edition edition--jinx'
-    } %}
-        {% block summary %}
-        <span class="edition__heading-text">{{ 'jinxes.title'|trans }}</span>
-        {% endblock %}
-        {% block body %}
-            <div id="team-jinx" class="edition__team">
-                {% for jinx in jinxes %}
-                    <div class="edition__role edition__role--jinx">
-                        <div class="edition__icon edition__icon--target">
-                            <img src="{{ jinx.target.image }}" alt="{{ jinx.target.name }}" width="177" height="124" loading="lazy">
-                        </div>
-                        <div class="edition__icon edition__icon--trick">
-                            <img src="{{ jinx.trick.image }}" alt="{{ jinx.trick.name }}" width="177" height="124" loading="lazy">
-                        </div>
-                        <div class="edition__ability">{{ jinx.reason }}</div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endblock %}
-    {% endembed %}
-{% endif %}
+<template id="sheet-entry">
+    <div class="edition__role js--sheet-entry--wrapper">
+        <p class="edition__name js--sheet-entry--name"></p>
+        <div class="edition__icon">
+            <img src="" alt="" class="edition__image js--sheet-entry--image" width="177" height="124" aria-hidden="true" loading="lazy">
+        </div>
+        <div class="edition__ability js--sheet-entry--ability"></div>
+        <div class="edition__jinxes js--sheet-entry--jinxes"></div>
+    </div>
+</template>
+
+<template id="sheet-entry-jinx">
+    <div class="edition__jinx">
+        <img src="" alt="" title="" width="177" height="124" loading="lazy" class="js--sheet-entry-jinx--image">
+    </div>
+</template>
+
+<template id="sheet-jinx">
+    <div class="edition__role edition__role--jinx">
+        <div class="edition__icon edition__icon--target">
+            <img src="" alt="" width="177" height="124" loading="lazy" class="js--sheet-jinx--target">
+        </div>
+        <div class="edition__icon edition__icon--trick">
+            <img src="" alt="" width="177" height="124" loading="lazy" class="js--sheet-jinx--trick">
+        </div>
+        <div class="edition__ability js--sheet-jinx--ability"></div>
+    </div>
+</template>
+
+<div id="sheet-groups"></div>
 
 <p><small>{{ 'sheet.each_night'|trans }}</small></p>
+
+<template id="breakdown-player">
+    <tr class="breakdown__row breakdown__row--[id] js--breakdown--row">
+        <th scope="row" class="breakdown__heading js--breakdown--heading"></th>
+        <th scope="col" class="breakdown__cell js--breakdown--cell"></th>
+    </tr>
+</template>
+<template id="breakdown-team">
+    <tr class="breakdown__row breakdown__row--[id] js--breakdown--row">
+        <th scope="row" class="breakdown__heading js--breakdown--heading"></th>
+        <td class="breakdown__cell js--breakdown--cell" data-count=""></td>
+    </tr>
+</template>
 
 <div class="breakdown no-print">
     <table class="breakdown__table">
         <caption class="sr-only">{{ 'sheet.breakdown'|trans }}</caption>
-        <tbody>
-            {% for group, count in breakdown %}
-                {% set isPlayers = loop.first %}
-                <tr class="breakdown__row breakdown__row--{{ group }}">
-                    <th scope="row" class="breakdown__heading">{{ ('groups.' ~ group)|trans }}</th>
-                    {% for count in count %}
-                        {% if isPlayers %}
-                            <th scope="col" class="breakdown__cell">{{ loop.last ? 'sheet.count_plus'|trans({ '%count%': count }) : count }}</th>
-                        {% else %}
-                            <td class="breakdown__cell">{{ count }}</td>
-                        {% endif %}
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-        </tbody>
+        <tbody id="breakdown-body"></tbody>
     </table>
 </div>
 
@@ -148,5 +126,24 @@
 {% endblock %}
 
 {% block javascript %}
+<script>
+var URLS = {
+    getGame: "{{ path('data_get_game', { game: '{game}' })|e('js') }}"
+};
+
+var I18N = {
+    players: "{{ 'groups.players'|trans|e('js') }}",
+    townsfolk: "{{ 'groups.townsfolk'|trans|e('js') }}",
+    outsider: "{{ 'groups.outsider'|trans|e('js') }}",
+    minion: "{{ 'groups.minion'|trans|e('js') }}",
+    demon: "{{ 'groups.demon'|trans|e('js') }}",
+    traveller: "{{ 'groups.traveller'|trans|e('js') }}",
+    fabled: "{{ 'groups.fabled'|trans|e('js') }}",
+    loric: "{{ 'groups.loric'|trans|e('js') }}",
+    jinx: "{{ 'sheet.jinx'|trans|e('js') }}",
+    jinxes: "{{ 'jinxes.title'|trans|e('js') }}",
+};
+</script>
+<script src="/build/data/{{ app.request.locale }}.js"></script>
 {{ encore_entry_script_tags('js/sheet') }}
 {% endblock %}

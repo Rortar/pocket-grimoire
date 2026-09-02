@@ -22,6 +22,7 @@ nightOrder.setHolders({
 gameObserver.on("characters-selected", ({ detail }) => {
 
     nightOrder.reset();
+    nightOrder.setCustomOrder(detail.meta);
     nightOrder.setCharacters(
         detail.characters
             .filter((character) => {

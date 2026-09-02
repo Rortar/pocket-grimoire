@@ -15,15 +15,6 @@ php bin/console cache:warmup --env="${APP_ENV}"
 
 if [ -n "${DATABASE_URL:-}" ]; then
     php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env="${APP_ENV}"
-
-    role_count="$(php bin/console doctrine:query:sql "SELECT COUNT(*) FROM roles" --env="${APP_ENV}" | tr -dc '0-9')"
-
-    if [ "${role_count:-0}" = "0" ]; then
-        php bin/console pocket-grimoire:populate-editions -f ./assets/data/editions.json --env="${APP_ENV}"
-        php bin/console pocket-grimoire:populate-teams -f ./assets/data/teams.json --env="${APP_ENV}"
-        php bin/console pocket-grimoire:populate-roles -f ./assets/data/characters.json --env="${APP_ENV}"
-        php bin/console pocket-grimoire:import --env="${APP_ENV}"
-    fi
 fi
 
 chown -R www-data:www-data var

@@ -26,12 +26,10 @@
 {% set version = hash(4) %}
 <script>
 var URLS = {
-    characters: "{{ path('data_characters', { version: version })|e('js') }}",
-    jinxes: "{{ path('data_jinx', { version: version })|e('js') }}",
-    game: "{{ path('data_game')|e('js') }}",
     homebrew: "{{ path('homebrew')|e('js') }}",
     drawCreate: "{{ path('draw_create')|e('js') }}",
-    url: "{{ path('data_url', { url: '{url}' })|e('js') }}"
+    url: "{{ path('data_url', { url: '{url}' })|e('js') }}",
+    botc: "{{ path('data_get_botc', { term: '{term}' })|e('js') }}",
 };
 
 var I18N = {
@@ -52,9 +50,15 @@ var I18N = {
     playerDrawCopyLink: "{{ 'setup.player_draw.copy_link'|trans|e('js') }}",
     playerDrawLinkCopied: "{{ 'setup.player_draw.link_copied'|trans|e('js') }}",
     playerDrawCopyError: "{{ 'setup.player_draw.copy_error'|trans|e('js') }}",
+    players: "{{ 'groups.players'|trans|e('js') }}",
+    townsfolk: "{{ 'groups.townsfolk'|trans|e('js') }}",
+    outsider: "{{ 'groups.outsider'|trans|e('js') }}",
+    minion: "{{ 'groups.minion'|trans|e('js') }}",
+    demon: "{{ 'groups.demon'|trans|e('js') }}",
 };
 
 var ENVIRONMENT = "{{ app.environment|e('js') }}";
 </script>
+<script src="/build/data/{{ app.request.locale }}.js"></script>
 {{ encore_entry_script_tags('js/main') }}
 {% endblock %}

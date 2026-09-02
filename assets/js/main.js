@@ -1,4 +1,8 @@
 // import "./processes/errors.js";
+import "./processes/debug.js";
+
+import "./processes/data.js";
+import "./processes/breakdown-table.js";
 
 import "./processes/setup/general.js";
 import "./processes/setup/select-edition.js";
@@ -28,3 +32,5 @@ import "./processes/notes.js";
 import "./processes/acknowledgements.js";
 
 import "./processes/store.js";
+
+import "./details.js";

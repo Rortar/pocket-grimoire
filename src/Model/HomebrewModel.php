@@ -4,13 +4,12 @@ namespace App\Model;
 
 use Symfony\Contracts\Translation\TranslatorInterface;
 use App\Repository\RoleRepository;
-use App\Repository\TeamRepository;
 
 class HomebrewModel
 {
 
-    protected $teamRepo;
     protected $roleRepo;
+    protected $translator;
     protected $requiredKeys = [
         'id',
         'name',
@@ -34,12 +33,10 @@ class HomebrewModel
     ];
 
     public function __construct(
-        TeamRepository $teamRepo,
         RoleRepository $roleRepo,
         TranslatorInterface $translator
     ) {
 
-        $this->teamRepo = $teamRepo;
         $this->roleRepo = $roleRepo;
         $this->translator = $translator;
 
@@ -68,7 +65,7 @@ class HomebrewModel
     /**
      * Checks to see if the given entry is a homebrew entry.
      *
-     * @param  array
+     * @param  array $entry
      * @return bool
      */
     public function isHomebrewEntry(array $entry): bool
@@ -95,25 +92,29 @@ class HomebrewModel
     }
 
     /**
-     * Checks to see if the entry just contains an 'id' key like an official
-     * character.
+     * Checks to see if the entry looks like an official character - i.e. it's
+     * either a string containing the ID, or an array that has a single entry:
+     * the ID.
      *
-     * @param  array $entry
-     * @return bool
+     * @param mixed $entry Entry to check.
+     * @return bool true if the entry looks like an official character, false
+     *         otherwise.
      */
-    public function isOfficialCharacter(array $entry): bool
+    public function looksOfficial($entry): bool
     {
+        if (is_string($entry)) {
+            return true;
+        }
 
-        if (!array_key_exists('id', $entry)) {
+        if (!is_array($entry)) {
             return false;
         }
 
-        $character = $this->roleRepo->findOneBy([
-            'identifier' => $this->normaliseId($entry['id'])
-        ]);
+        if (count(array_keys($entry)) === 1 && array_key_exists('id', $entry)) {
+            return true;
+        }
 
-        return !is_null($character);
-
+        return false;
     }
 
     /**
@@ -121,6 +122,7 @@ class HomebrewModel
      * and that it's part of a recognised team.
      *
      * @param  array $entry
+     * @param  array $reason
      * @return bool
      */
     public function validateEntry(array $entry, array &$reason = []): bool
@@ -134,19 +136,6 @@ class HomebrewModel
             $reason[] = $this->translator->trans(
                 'errors.homebrew_json.not_homebrew',
                 ['%id%' => $entry['id']]
-            );
-            $isValid = false;
-
-        }
-
-        if (
-            $isValid
-            && !$this->teamRepo->findOneBy(['identifier' => $entry['team']])
-        ) {
-
-            $reason[] = $this->translator->trans(
-                'errors.homebrew_json.unrecognised_team',
-                ['%team%' => $entry['team']]
             );
             $isValid = false;
 
@@ -213,9 +202,6 @@ class HomebrewModel
     {
 
         $isValid = true;
-        $teams = array_map(function ($value) {
-            return 0;
-        }, array_flip($this->teamRepo->getTeamIds()));
 
         foreach ($entries as $entry) {
 
@@ -236,41 +222,10 @@ class HomebrewModel
 
             }
 
-            if ($this->isMetaEntry($entry)) {
+            if ($this->isMetaEntry($entry) || $this->looksOfficial($entry)) {
                 continue;
             }
-
-            if ($this->isOfficialCharacter($entry)) {
-
-                $character = $this->roleRepo->findOneBy([
-                    'identifier' => $this->normaliseId($entry['id'])
-                ]);
-
-                if (is_null($character)) {
-
-                    $reasons[] = $this->translator->trans(
-                        'errors.homebrew_json.not_recognise_character',
-                        ['%id%' => $entry['id']]
-                    );
-                    $isValid = false;
-                    break;
-
-                }
-
-                // The user may have uploaded a script that includes travellers
-                // or fabled. This allows that team to be added optionally.
-                $teamID = $character->getTeam()->getIdentifier();
-
-                if (!array_key_exists($teamID, $teams)) {
-                    $teams[$teamID] = 0;
-                }
-
-                $teams[$teamID] += 1;
-
-                continue;
-
-            }
-
+            
             $invalidReasons = [];
             if (!$this->validateEntry($entry, $invalidReasons)) {
 
@@ -285,23 +240,6 @@ class HomebrewModel
                 break;
 
             }
-
-            if (array_key_exists($entry['team'], $teams)) {
-                $teams[$entry['team']] += 1;
-            }
-
-        }
-
-        if ($isValid && in_array(0, array_values($teams))) {
-
-            $missingTeams = array_keys(array_filter($teams, function ($count) {
-                return $count < 1;
-            }));
-            $reasons[] = $this->translator->trans(
-                'errors.homebrew_json.empty_teams',
-                ['%teams%' => implode(', ', $missingTeams)]
-            );
-            $isValid = false;
 
         }
 
@@ -338,7 +276,7 @@ class HomebrewModel
 
         }
 
-        if ($this->isOfficialCharacter($entry)) {
+        if ($this->looksOfficial($entry)) {
             return $entry;
         }
 

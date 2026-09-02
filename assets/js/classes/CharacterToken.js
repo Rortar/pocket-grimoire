@@ -56,7 +56,7 @@ export default class CharacterToken extends Token {
         // Provide some default values so that .get() methods don't worry about
         // missing data and instead worry about typos.
 
-        return {
+        const processed = {
             id: "",
             name: "",
             edition: "",
@@ -72,6 +72,21 @@ export default class CharacterToken extends Token {
             special: null,
             ...data
         };
+
+        // The data now has an array of images. This is a quick workaround to
+        // get that working.
+        // TODO: allow the role to have an array of images.
+        if (Array.isArray(processed.image)) {
+
+            processed.image = (
+                typeof processed.image[0] === "string"
+                ? processed.image[0]
+                : ""
+            );
+
+        }
+
+        return processed;
 
     }
 
@@ -600,6 +615,32 @@ export default class CharacterToken extends Token {
             }
         });
 
+    }
+
+    drawSheetEntry() {
+
+        const {
+            id,
+            name,
+            image,
+            ability,
+        } = this.data;
+
+        return this.constructor.templates.entry.draw({
+            ".js--sheet-entry--wrapper"(element) {
+                element.id = `entry--${id}`;
+            },
+            ".js--sheet-entry--name"(element) {
+                element.textContent = name;
+            },
+            ".js--sheet-entry--image"(element) {
+                element.src = image;
+            },
+            ".js--sheet-entry--ability"(element) {
+                element.textContent = ability;
+            },
+        });
+    
     }
 
 }

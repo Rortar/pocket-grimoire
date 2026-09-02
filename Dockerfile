@@ -1,19 +1,9 @@
-FROM node:20-bookworm-slim AS assets
-
-WORKDIR /app
-
-COPY package.json yarn.lock webpack.config.js ./
-COPY assets ./assets
-
-RUN corepack enable \
-    && yarn install --frozen-lockfile \
-    && yarn build
-
-FROM php:8.2-cli AS vendor
+FROM php:8.4-cli AS vendor
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN apt-get update \
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
     && apt-get install -y --no-install-recommends unzip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -35,7 +25,29 @@ COPY src ./src
 
 RUN composer dump-autoload --no-dev --optimize
 
-FROM php:8.2-apache
+FROM vendor AS resources
+
+ENV APP_ENV=prod \
+    APP_DEBUG=0
+
+COPY . .
+
+RUN php bin/console pocket-grimoire:fetch \
+    && php bin/console pocket-grimoire:translate
+
+FROM node:20-bookworm-slim AS assets
+
+WORKDIR /app
+
+COPY package.json yarn.lock webpack.config.js ./
+COPY assets ./assets
+COPY --from=resources /app/assets/data/compiled ./assets/data/compiled
+
+RUN corepack enable \
+    && yarn install --frozen-lockfile \
+    && yarn build
+
+FROM php:8.4-apache
 
 ENV APP_ENV=prod \
     APP_DEBUG=0 \
@@ -43,7 +55,8 @@ ENV APP_ENV=prod \
 
 WORKDIR /var/www/html
 
-RUN apt-get update \
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev \
     && docker-php-ext-install opcache pdo_pgsql \
     && a2enmod headers rewrite \
