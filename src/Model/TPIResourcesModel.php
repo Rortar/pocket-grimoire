@@ -7,7 +7,7 @@ class TPIResourcesModel
     /**
      * @var string Location wrapper for the images.
      */
-    const LOCATION_IMAGES = '/build/img/roles/%s.webp';
+    const LOCATION_IMAGES = '/build/img/icons/%s/%s.webp';
 
     /**
      * An error message generated when validating a role.
@@ -366,31 +366,6 @@ class TPIResourcesModel
      */
     protected function generateImages(string $id, string $team): array
     {
-        $images = [];
-
-        switch ($team) {
-        case 'fabled':
-        case 'loric':
-            $images = [$id];
-            break;
-
-        case 'townsfolk':
-        case 'outsider':
-            $images = ["{$id}_g", "{$id}_e"];
-            break;
-
-        case 'minion':
-        case 'demon':
-            $images = ["{$id}_e", "{$id}_g"];
-            break;
-
-        case 'traveller':
-            $images = [$id, "{$id}_g", "{$id}_e"];
-            break;
-        }
-
-        return array_map(function ($image) {
-            return sprintf(static::LOCATION_IMAGES, $image);
-        }, $images);
+        return [sprintf(static::LOCATION_IMAGES, $team, $id)];
     }
 }
